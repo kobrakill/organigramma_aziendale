@@ -2,17 +2,19 @@ package org.organigramma.composite;
 
 
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
+
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Objects;
 
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "name")
-public class Role implements UnitComponent {
+
+public class Role implements UnitComponent, Serializable {
 
     private String name, description, requirements;
     private double salary;
-
+    @Serial
+    private static final long serialVersionUID = 1L;
     public Role(String name, String description, String requirements, double salary) {
         this.name = name;
         this.description = description;

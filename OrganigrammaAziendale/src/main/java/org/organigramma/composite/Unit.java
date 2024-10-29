@@ -1,23 +1,20 @@
 package org.organigramma.composite;
 
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.JsonIdentityReference;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.*;
 
 
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "name")
-@JsonIgnoreProperties("allowedRoleNames")
-public class Unit implements UnitComponent {
+
+public class Unit implements UnitComponent, Serializable {
     private String name;
-    @JsonIdentityReference
     private List<Employee> employees;
     private List<Unit> subUnits;
     private List<Role> allowedRoles;
-
+    @Serial
+    private static final long serialVersionUID = 1L;
     public Unit() {
     }
 
@@ -31,9 +28,9 @@ public class Unit implements UnitComponent {
         if (!employees.contains(employee)) {
             employees.add(employee);
             if(allowedRoles.contains(employee.getRole(this)) && employee.getRole(this)!=null){
-                employee.getRolebyUnits().put(this, employee.getRole(this));
+                employee.getRolebyUnits().put(this.getName(), employee.getRole(this));
             } else if(!allowedRoles.contains(employee.getRole(this))){
-                employee.getRolebyUnits().put(this,new Role("Nessun Ruolo","none","none",0));
+                employee.getRolebyUnits().put(this.getName(),new Role("Nessun Ruolo","none","none",0));
             }
             else throw new RuntimeException("Employee " + employee.getName() + " has no role in unit "+this.getName());
         }else throw new RuntimeException("Employee " + employee.getName() + " has already been added to unit "+this.getName());
@@ -42,7 +39,7 @@ public class Unit implements UnitComponent {
     public void removeEmployee(Employee employee) {
         if (employees.contains(employee)) {
             employees.remove(employee);
-            employee.getRolebyUnits().remove(this);
+            employee.getRolebyUnits().remove(this.getName());
         }
     }
 
@@ -52,12 +49,34 @@ public class Unit implements UnitComponent {
         }
         else throw new RuntimeException("Unit " + subUnit.getName() + " already present");
     }
+    public void updateEmployee(Employee Oldemp,Employee emp) {
+        for (int i = 0; i < employees.size(); i++) {
+            Employee existingEmployee = employees.get(i);
+            // Controllo se l'oggetto esistente è lo stesso del dipendente da aggiornare
+            if (existingEmployee.equals(Oldemp)) {
+                System.out.println("cane");
+                // Aggiorno le informazioni del dipendente
+                emp.setRole(this,existingEmployee.getRole(this));
+                employees.set(i, emp);
+                existingEmployee.update(emp);
+                break;
+            }
+        }
+    }
 
+    //le subUnità sono tutte le unità diverse dalla radice
     public void removeSubUnit(Unit subUnit) {
-        if (subUnits.contains(subUnit)) {
+        if (this.subUnits.contains(subUnit)) {
+            // Rimuovo prima i dipendenti associati a questa unità
+            List<Employee> employeesToRemove = new ArrayList<>(subUnit.getEmployees()); // Usa una copia per evitare ConcurrentModificationException
+            for (Employee employee : employeesToRemove) {
+                employee.getRolebyUnits().remove(subUnit.getName()); // rimuovo l'unità dal dipendente
+
+            }
             subUnits.remove(subUnit);
         }
     }
+
 
 
 
@@ -75,17 +94,16 @@ public class Unit implements UnitComponent {
             System.out.println(employees.size());
             while (iterator.hasNext()) {
                 Employee e = iterator.next();
-                Role r= e.getRolebyUnits().get(this);
+                Role r = e.getRolebyUnits().get(this.getName());
 
                 if (r.equals(role)) {
-                    e.getRolebyUnits().put(this,new Role("Nessun Ruolo","none","none",0));
+                    e.getRolebyUnits().remove(this.getName()); // Rimuove il ruolo dall'unità specifica
+                    iterator.remove(); // Rimuove il dipendente dalla lista degli impiegati dell'unità in modo sicuro
                 }
-
-                //iterator.remove();
-
             }
         }
     }
+
 
 
 
@@ -107,6 +125,23 @@ public class Unit implements UnitComponent {
         }
     }
 
+    // Metodo per trovare un'unità per nome
+    public Unit findUnitByName(String unitName) {
+        // Controlla se il nome dell'unità corrente corrisponde
+        if (this.name.equalsIgnoreCase(unitName)) {
+            return this; // Restituisci l'unità corrente se il nome corrisponde
+        }
+
+        // Ricerca ricorsiva nelle sotto-unità
+        for (Unit subUnit : subUnits) {
+            Unit foundUnit = subUnit.findUnitByName(unitName);
+            if (foundUnit != null) {
+                return foundUnit; // Restituisci l'unità trovata
+            }
+        }
+
+        return null; // Nessuna unità trovata con il nome specificato
+    }
 
 
     //getters and setters

@@ -9,6 +9,7 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -233,19 +234,18 @@ public class OrganizationChartGUI extends JFrame implements Observer {
                 List<Employee> employees = oldUnitReference.getEmployees();
 
                 for (Employee employee : employees) {
-                    HashMap<Unit, Role> rolebyUnits = employee.getRolebyUnits();
+                    HashMap<String, Role> rolebyUnits = employee.getRolebyUnits();
 
                     // Mappa temporanea per aggiornare il riferimento dell'unità senza interferire con l'iterazione
-                    Map<Unit, Role> updatedRolebyUnits = new HashMap<>(rolebyUnits);
+                    Map<String, Role> updatedRolebyUnits = new HashMap<>(rolebyUnits);
 
-                    for (Map.Entry<Unit, Role> entry : rolebyUnits.entrySet()) {
-                        Unit unit = entry.getKey();
+                    for (Map.Entry<String, Role> entry : rolebyUnits.entrySet()) {
+
                         Role role = entry.getValue();
 
-                        if (unit == oldUnitReference) { // Controllo per riferimento esatto
-                            updatedRolebyUnits.remove(unit);
-                            updatedRolebyUnits.put(selectedUnit, role);
-                            System.out.println("Ruolo per l'unità aggiornata: " + updatedRolebyUnits.get(selectedUnit));
+                        if (selectedUnit == oldUnitReference) { // Controllo per riferimento esatto
+                            updatedRolebyUnits.remove(selectedUnit.getName());
+                            updatedRolebyUnits.put(selectedUnit.getName(), role);
                         }
                     }
 
@@ -523,6 +523,9 @@ public class OrganizationChartGUI extends JFrame implements Observer {
             JPanel employeesPanel = new JPanel();
             employeesPanel.setLayout(new BoxLayout(employeesPanel, BoxLayout.Y_AXIS));
 
+            // Mappa per tracciare i pannelli dei dipendenti
+            Map<Employee, JPanel> employeePanelsMap = new HashMap<>();
+
             // Aggiungo i dipendenti al pannello employeesPanel
             for (Employee emp : selectedUnit.getEmployees()) {
                 JPanel employeePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -548,12 +551,15 @@ public class OrganizationChartGUI extends JFrame implements Observer {
                 // Bottone per eliminare il dipendente
                 JButton deleteButton = new JButton("Elimina");
                 deleteButton.addActionListener(e -> {
-                    removeEmployee(emp);
-                    showInfo();
+                    removeEmployee(emp); // Rimuove il dipendente dalla logica
+                    employeesPanel.remove(employeePanel); // Rimuove solo il pannello del dipendente dall'interfaccia
+                    employeesPanel.revalidate();
+                    employeesPanel.repaint();
                 });
                 employeePanel.add(deleteButton);
 
                 employeesPanel.add(employeePanel);
+                employeePanelsMap.put(emp, employeePanel); // Salva il pannello nella mappa
             }
 
             JScrollPane employeesScrollPane = new JScrollPane(employeesPanel);
@@ -582,15 +588,28 @@ public class OrganizationChartGUI extends JFrame implements Observer {
                 // Bottone per modificare il ruolo
                 JButton modifyButton = new JButton("Modifica");
                 modifyButton.addActionListener(e -> {
-                    modifyRole(role, employeesPanel); // Passa employeesPanel per aggiornamento grafico
+                    modifyRole(role, employeesPanel);
                     roleLabel.setText(role.getName());
                 });
                 rolePanel.add(modifyButton);
 
-                // Bottone per eliminare il ruolo
+                // Bottone per eliminare il ruolo e tutti i dipendenti con quel ruolo
                 JButton deleteButton = new JButton("Elimina");
                 deleteButton.addActionListener(e -> {
-                    removeRole(role);
+                    removeRole(role); // Rimuove il ruolo dalla logica
+                    rolesPanel.remove(rolePanel); // Rimuove il pannello del ruolo dall'interfaccia
+
+                    // Rimuove tutti i dipendenti con quel ruolo dall'unità
+                    for (Employee emp : new ArrayList<>(selectedUnit.getEmployees())) { // Usa una copia per evitare problemi di modifica concorrente
+                        if (emp.getRole(selectedUnit).equals(role)) {
+                            removeEmployee(emp); // Rimuove il dipendente dalla logica
+                            JPanel empPanelToRemove = employeePanelsMap.get(emp); // Trova il pannello specifico
+                            if (empPanelToRemove != null) {
+                                employeesPanel.remove(empPanelToRemove); // Rimuove solo il pannello del dipendente interessato
+                            }
+                        }
+                    }
+                    infoDialog.dispose();
                     showInfo();
                 });
                 rolePanel.add(deleteButton);
@@ -615,6 +634,8 @@ public class OrganizationChartGUI extends JFrame implements Observer {
             JOptionPane.showMessageDialog(this, "Seleziona un'unità per visualizzare le informazioni.");
         }
     }
+
+
     //metodi per i dipendenti
 
     // Metodo per modificare il ruolo del dipendente
@@ -686,11 +707,23 @@ public class OrganizationChartGUI extends JFrame implements Observer {
         int result = JOptionPane.showConfirmDialog(this, panel, "Modifica Dipendente", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (result == JOptionPane.OK_OPTION) {
             try {
-                emp.setName(nameField.getText().trim());
-                emp.setLastName(lastNameField.getText().trim());
-                emp.setCity(cityField.getText().trim());
-                emp.setAddress(addressField.getText().trim());
-                emp.setAge(Integer.parseInt(ageField.getText().trim()));
+                Employee oldEmployee = new Employee(emp.getName(),emp.getLastName(),emp.getCity(),emp.getAddress(),emp.getAge());
+                // Aggiorna in tutte le unità associate a questo dipendente
+                for (Unit unit : organizationSubject.getAllUnits()) {
+                    // Se l'unità contiene il dipendente, aggiorna i suoi dettagli
+                    if (unit.getEmployees().contains(emp)) {
+                        emp.setName(nameField.getText().trim());
+                        emp.setLastName(lastNameField.getText().trim());
+                        emp.setCity(cityField.getText().trim());
+                        emp.setAddress(addressField.getText().trim());
+                        emp.setAge(Integer.parseInt(ageField.getText().trim()));
+                        System.out.println(oldEmployee);
+                        System.out.println(emp);
+                        unit.updateEmployee(oldEmployee,emp); // Uso il metodo updateEmployee per aggiornare i dati
+                    }
+                }
+
+
 
                 organizationSubject.setState("Modificato dipendente: " + emp.getName());
                 organizationSubject.notifyObservers();
@@ -791,17 +824,42 @@ private void showRoleDetails(Role role) {
 
 
     private void saveOrganizationChart() {
-        organizationSubject.setState("Organigramma salvato.");
-        organizationSubject.notifyObservers();
-        JOptionPane.showMessageDialog(this, "Funzione per salvare l'organigramma.");
+        JFileChooser fileChooser = new JFileChooser();
+        int option = fileChooser.showSaveDialog(this);
+
+        if (option == JFileChooser.APPROVE_OPTION) {
+            try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(fileChooser.getSelectedFile()))) {
+                out.writeObject(organizationSubject); // Salva l'intero oggetto
+                organizationSubject.setState("Organigramma salvato con successo.");
+                organizationSubject.notifyObservers();
+                JOptionPane.showMessageDialog(this, "Organigramma salvato correttamente.");
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(this, "Errore durante il salvataggio dell'organigramma: " + e.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     private void loadOrganizationChart() {
-        organizationSubject.setState("Organigramma caricato.");
-        organizationSubject.notifyObservers();
-        JOptionPane.showMessageDialog(this, "Funzione per caricare un organigramma.");
-    }
+        JFileChooser fileChooser = new JFileChooser();
+        int option = fileChooser.showOpenDialog(this);
 
+        if (option == JFileChooser.APPROVE_OPTION) {
+            try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(fileChooser.getSelectedFile()))) {
+                organizationSubject = (OrganizationSubject) in.readObject(); // Carica l'intero oggetto
+                organizationSubject.attach(this);
+                selectedUnit = organizationSubject.getRoot(); // Imposta la radice come unità selezionata
+                organizationSubject.setState("Organigramma caricato con successo.");
+                organizationSubject.notifyObservers();
+                JOptionPane.showMessageDialog(this, "Organigramma caricato correttamente.");
+
+                // Aggiorna la grafica per mostrare l'organigramma caricato
+                chartPanel.removeAll();
+                chartPanel.repaint();
+            } catch (IOException | ClassNotFoundException e) {
+                JOptionPane.showMessageDialog(this, "Errore durante il caricamento dell'organigramma: " + e.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
     private void resetOrganizationChart() {
         Unit newRootUnit = new Unit("Azienda");
         organizationSubject.setRoot(newRootUnit);
