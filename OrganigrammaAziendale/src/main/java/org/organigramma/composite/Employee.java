@@ -16,7 +16,7 @@ public class Employee implements UnitComponent {
 
     private String name, lastName, city, address;
     private int age;
-    private int id;//final?
+    private int id;
 
     //tiene traccia del prossimo nextId da assegnare
     private static int nextId = 1;
@@ -32,9 +32,9 @@ public class Employee implements UnitComponent {
     }
 
     public void addRole(Unit unit, Role role) {
-        if(unit.getAllowedRoles().contains(role)){
+       // if(unit.getAllowedRoles().contains(role)){
             rolebyUnits.put(unit, role);
-        }else throw new IllegalArgumentException("Role "+role.getName()+" for employee "+ this.name+ " of unit "+unit.getName()+ " not allowed");
+       // }else throw new IllegalArgumentException("Role "+role.getName()+" for employee "+ this.name+ " of unit "+unit.getName()+ " not allowed");
 
     }
 
@@ -49,6 +49,26 @@ public class Employee implements UnitComponent {
 
     public Role getRole(Unit unit){
         return rolebyUnits.get(unit);
+    }
+
+    public void setRole(Unit unit, Role role) {
+        if (unit.getAllowedRoles().contains(role)) {
+            rolebyUnits.put(unit, role);
+        } else {
+            throw new IllegalArgumentException("Role " + role.getName() + " for employee " + this.name +
+                    " of unit " + unit.getName() + " not allowed");
+        }
+    }
+
+    // Aggiorna il ruolo associato a un'unità, usato dopo modifiche nell'organigramma
+    public void updateRoleForUnit(Unit unit, Role newRole) {
+        // Aggiorna solo se il ruolo è ammesso dall'unità
+        if (unit.getAllowedRoles().contains(newRole)) {
+            rolebyUnits.put(unit, newRole);
+        } else {
+            throw new IllegalArgumentException("Role " + newRole.getName() + " for employee " + this.name +
+                    " of unit " + unit.getName() + " not allowed");
+        }
     }
 
     public String getName() {

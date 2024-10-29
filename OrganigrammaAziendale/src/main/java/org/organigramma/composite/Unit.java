@@ -118,6 +118,14 @@ public class Unit implements UnitComponent {
         this.name = name;
     }
 
+    public Employee findEmployeeByName(String name) {
+        for (Employee emp : employees) {
+            if (emp.getName().equals(name)) {
+                return emp;
+            }
+        }
+        return null;
+    }
 
     public List<Employee> getEmployees() {
         return employees;
