@@ -1,0 +1,11 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="OrganigrammaAziendale:jar">
+    <output-path>$PROJECT_DIR$/../../OrganigrammaAziendale-master/dipendenze</output-path>
+    <root id="archive" name="OrganigrammaAziendale.jar">
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/META-INF/MANIFEST.MF" />
+      </element>
+      <element id="module-output" name="OrganigrammaAziendale" />
+    </root>
+  </artifact>
+</component>

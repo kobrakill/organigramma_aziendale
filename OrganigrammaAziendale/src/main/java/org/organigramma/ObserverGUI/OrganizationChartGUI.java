@@ -884,7 +884,7 @@ private void showRoleDetails(Role role) {
     private void showUsageGuide() {
         organizationSubject.setState("Visualizzata guida all'utilizzo.");
         organizationSubject.notifyObservers();
-        JOptionPane.showMessageDialog(this, "Guida all'utilizzo del software.");
+        JOptionPane.showMessageDialog(this, "Guida all'utilizzo del software è nel file README.TXT associato all'applicazione .");
     }
 
     public static void main(String[] args) {
