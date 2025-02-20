@@ -81,7 +81,7 @@ public class OrganizationChartGUI extends JFrame implements Observer {
         addEmployeeButton = createButton("Aggiungi Dipendente ad Unità", e -> addEmployeeToUnit());
         addAllowedRoleButton = createButton("Crea Ruolo Ammissibile", e -> createRole());
 
-
+        // Aggiungo al pannello i pulsanti
         leftPanel.add(modifyUnitNameButton);
         leftPanel.add(addSubUnitButton);
         leftPanel.add(removeUnitButton);
