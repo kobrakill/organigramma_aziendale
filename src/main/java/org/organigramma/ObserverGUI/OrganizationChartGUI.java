@@ -129,7 +129,6 @@ public class OrganizationChartGUI extends JFrame implements Observer {
             public void mouseClicked(MouseEvent e) {
                 selectedUnit = unit;
                 organizationSubject.setState("Selezionata unità: " + unit.getName());
-                organizationSubject.notifyObservers();
             }
         });
         chartPanel.add(unitRect);
@@ -255,7 +254,6 @@ public class OrganizationChartGUI extends JFrame implements Observer {
                 }
 
                 organizationSubject.setState("Modificata unità: " + newName);
-                organizationSubject.notifyObservers();
                 chartPanel.repaint(); // Aggiorna la grafica
             }
         } else {
@@ -279,7 +277,6 @@ public class OrganizationChartGUI extends JFrame implements Observer {
                 Unit newUnit = new Unit(unitName);
                 selectedUnit.addSubUnit(newUnit);
                 organizationSubject.setState("Aggiunta sotto unità: " + unitName);
-                organizationSubject.notifyObservers();
                 chartPanel.repaint();
             }
         } else {
@@ -307,7 +304,6 @@ public class OrganizationChartGUI extends JFrame implements Observer {
             if (parentUnit != null) {
                 parentUnit.removeSubUnit(selectedUnit);
                 organizationSubject.setState("Rimossa unità: " + selectedUnit.getName());
-                organizationSubject.notifyObservers();
                 selectedUnit = null; // Deseleziona l'unità dopo la rimozione
                 chartPanel.repaint(); // Aggiorna la grafica
             }
@@ -410,7 +406,7 @@ public class OrganizationChartGUI extends JFrame implements Observer {
                 selectedUnit.addEmployee(newEmployee);
                 newEmployee.addRole(selectedUnit, assignedRole);
                 organizationSubject.setState("Aggiunto dipendente: " + employeeName + " con ruolo " + assignedRole.getName());
-                organizationSubject.notifyObservers();
+
             }
         } else {
             JOptionPane.showMessageDialog(this, "Seleziona un'unità per aggiungere un dipendente.");
@@ -496,7 +492,7 @@ public class OrganizationChartGUI extends JFrame implements Observer {
                 isValid = true;
                 selectedUnit.addAllowedRole(newRole);
                 organizationSubject.setState("Creato nuovo ruolo ammissibile: " + roleName);
-                organizationSubject.notifyObservers();
+
             }
         } else {
             JOptionPane.showMessageDialog(this, "Seleziona un'unità per creare un ruolo.");
@@ -726,7 +722,6 @@ public class OrganizationChartGUI extends JFrame implements Observer {
 
 
                 organizationSubject.setState("Modificato dipendente: " + emp.getName());
-                organizationSubject.notifyObservers();
                 chartPanel.repaint(); // Aggiorna la grafica
             } catch (NumberFormatException e) {
                 JOptionPane.showMessageDialog(this, "Errore: L'età deve essere un numero.", "Errore", JOptionPane.ERROR_MESSAGE);
@@ -739,7 +734,6 @@ public class OrganizationChartGUI extends JFrame implements Observer {
         if (confirmation == JOptionPane.YES_OPTION) {
             selectedUnit.removeEmployee(emp);
             organizationSubject.setState("Rimosso dipendente: " + emp.getName());
-            organizationSubject.notifyObservers();
             chartPanel.repaint(); // Aggiorna la grafica
         }
     }
@@ -780,7 +774,6 @@ private void showRoleDetails(Role role) {
                 role.setSalary(Double.parseDouble(salaryField.getText().trim()));
 
                 organizationSubject.setState("Modificato ruolo: " + role.getName());
-                organizationSubject.notifyObservers();
                 chartPanel.repaint();
 
                 // Aggiorno graficamente tutti i dipendenti che hanno questo ruolo
@@ -816,7 +809,6 @@ private void showRoleDetails(Role role) {
         if (confirmation == JOptionPane.YES_OPTION) {
             selectedUnit.removeAllowedRole(role);
             organizationSubject.setState("Rimosso ruolo: " + role.getName());
-            organizationSubject.notifyObservers();
             chartPanel.repaint();
         }
     }
@@ -831,7 +823,6 @@ private void showRoleDetails(Role role) {
             try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(fileChooser.getSelectedFile()))) {
                 out.writeObject(organizationSubject); // Salva l'intero oggetto
                 organizationSubject.setState("Organigramma salvato con successo.");
-                organizationSubject.notifyObservers();
                 JOptionPane.showMessageDialog(this, "Organigramma salvato correttamente.");
             } catch (IOException e) {
                 JOptionPane.showMessageDialog(this, "Errore durante il salvataggio dell'organigramma: " + e.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
@@ -849,7 +840,6 @@ private void showRoleDetails(Role role) {
                 organizationSubject.attach(this);
                 selectedUnit = organizationSubject.getRoot(); // Imposta la radice come unità selezionata
                 organizationSubject.setState("Organigramma caricato con successo.");
-                organizationSubject.notifyObservers();
                 JOptionPane.showMessageDialog(this, "Organigramma caricato correttamente.");
 
                 // Aggiorna la grafica per mostrare l'organigramma caricato
@@ -865,7 +855,6 @@ private void showRoleDetails(Role role) {
         organizationSubject.setRoot(newRootUnit);
         selectedUnit = newRootUnit; // Imposto la nuova unità principale come selezionata
         organizationSubject.setState("Organigramma azzerato.");
-        organizationSubject.notifyObservers();
         JOptionPane.showMessageDialog(this, "Organigramma azzerato.");
 
         // Ripristino le dimensioni del chartPanel alle originali e rimuovo tutti i componenti
@@ -883,7 +872,6 @@ private void showRoleDetails(Role role) {
 
     private void showUsageGuide() {
         organizationSubject.setState("Visualizzata guida all'utilizzo.");
-        organizationSubject.notifyObservers();
         JOptionPane.showMessageDialog(this, "Guida all'utilizzo del software è nel file README.TXT associato all'applicazione .");
     }
 
