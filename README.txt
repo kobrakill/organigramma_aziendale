@@ -34,6 +34,9 @@ Il pannello laterale include ulteriori opzioni per la visualizzazione e la gesti
  per quella specifica unità con i rispettivi ruoli ed anche una lista dei ruoli ammissibili per quella unità. Nota che di fianco ciascun 
  dipendente sono presenti dei bottoni per la visualizzazione delle rispettive informazione, modifica ed eventuale rimozione. Discorso analogo
  per i ruoli ammissibili.
+-Gestisci Tutti i Dipendenti: Si apre un pannello che consente la visualizzazione di tutti i dipendenti presenti nell'organigramma in ordine
+alfabetico. Sotto ognuno di essi è possibile visualizzare tutte le unità a cui appartiene il dipendente col rispettivo ruolo. È anche
+possibile modificare i dati dei dipendenti e licenziare un dipendente. Licenziandolo verrà rimosso da tutte le unità presenti nell'organigramma.
 -Salva Organigramma: Permette di salvare l’organigramma corrente su, da poter ricaricare successivamente.
 -Carica Organigramma: Consente di ricaricare un organigramma precedentemente salvato.
 -Azzera Organigramma: Ripristina l’organigramma allo stato iniziale.
