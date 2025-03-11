@@ -10,10 +10,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 public class OrganizationChartGUI extends JFrame implements Observer {
     private OrganizationSubject organizationSubject;
@@ -33,6 +31,7 @@ public class OrganizationChartGUI extends JFrame implements Observer {
     private JButton loadOrganizationChartButton;
     private JButton resetOrganizationChartButton;
     private JButton showUsageGuideButton;
+    private JButton manageEmployeesButton;
 
     public OrganizationChartGUI() {
         setTitle("Organigramma Aziendale");
@@ -94,12 +93,16 @@ public class OrganizationChartGUI extends JFrame implements Observer {
         rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
 
         showInfoButton = createButton("Visualizza info Unità", e -> showInfo());
+        manageEmployeesButton = createButton("Gestisci Tutti i Dipendenti", e -> showEmployeeManagement());
         saveOrganizationChartButton = createButton("Salva Organigramma", e -> saveOrganizationChart());
         loadOrganizationChartButton = createButton("Carica Organigramma", e -> loadOrganizationChart());
         resetOrganizationChartButton = createButton("Azzera Organigramma", e -> resetOrganizationChart());
         showUsageGuideButton = createButton("Guida all'Utilizzo", e -> showUsageGuide());
 
+
+
         rightPanel.add(showInfoButton);
+        rightPanel.add(manageEmployeesButton);
         rightPanel.add(saveOrganizationChartButton);
         rightPanel.add(loadOrganizationChartButton);
         rightPanel.add(resetOrganizationChartButton);
@@ -114,6 +117,8 @@ public class OrganizationChartGUI extends JFrame implements Observer {
         // Visualizza la finestra
         setVisible(true);
     }
+
+
 
     private JButton createButton(String text, ActionListener actionListener) {
         JButton button = new JButton(text);
@@ -212,7 +217,7 @@ public class OrganizationChartGUI extends JFrame implements Observer {
 
     private void modifyUnitName() {
         if (selectedUnit != null) {
-            String newName = JOptionPane.showInputDialog("Inserisci il nuovo nome dell'unità:");
+            String newName = JOptionPane.showInputDialog(this,"Inserisci il nuovo nome dell'unità:");
             if (newName != null && !newName.trim().isEmpty()) {
                 // Verifico se il nuovo nome è già in uso nell'intero albero
                 if (isUnitNameDuplicate(organizationSubject.getRoot(), newName)) {
@@ -264,7 +269,7 @@ public class OrganizationChartGUI extends JFrame implements Observer {
 
     private void addSubUnit() {
         if (selectedUnit != null) {
-            String unitName = JOptionPane.showInputDialog("Inserisci il nome della sotto unità:");
+            String unitName = JOptionPane.showInputDialog(this,"Inserisci il nome della sotto unità:");
             if (unitName != null && !unitName.trim().isEmpty()) {
                 // Verifico se il nome è già in uso in tutto l'albero
                 if (isUnitNameDuplicate(organizationSubject.getRoot(), unitName)) {
@@ -378,11 +383,19 @@ public class OrganizationChartGUI extends JFrame implements Observer {
                 int age;
                 try {
                     age = Integer.parseInt(ageText);
-                    if (age <= 0) throw new NumberFormatException();
+                    if (age <= 0) {
+                        throw new NumberFormatException();
+                    }
+                    if (age < 18) {
+                        JOptionPane.showMessageDialog(this, "Il dipendente deve essere maggiorenne (almeno 18 anni).", "Errore", JOptionPane.ERROR_MESSAGE);
+                        continue;
+                    }
                 } catch (NumberFormatException e) {
                     JOptionPane.showMessageDialog(this, "L'età deve essere un numero valido e maggiore di 0.", "Errore", JOptionPane.ERROR_MESSAGE);
                     continue;
                 }
+
+
 
                 Employee newEmployee = new Employee(employeeName, lastName, city, address, age);
 
@@ -393,8 +406,7 @@ public class OrganizationChartGUI extends JFrame implements Observer {
                     return;
                 }
 
-                // Se i dati sono validi, esco dal ciclo e aggiungo il dipendente
-                isValid = true;
+
                 Role assignedRole = selectRoleForEmployee(allowedRoles);
                 if (assignedRole == null) {
                     JOptionPane.showMessageDialog(this,
@@ -403,10 +415,11 @@ public class OrganizationChartGUI extends JFrame implements Observer {
                             JOptionPane.ERROR_MESSAGE);
                     return;
                 }
-                selectedUnit.addEmployee(newEmployee);
+                // Se i dati sono validi, aggiungo il dipendente ed esco dal ciclo
+                isValid = true;
                 newEmployee.addRole(selectedUnit, assignedRole);
-                organizationSubject.setState("Aggiunto dipendente: " + employeeName + " con ruolo " + assignedRole.getName());
-
+                selectedUnit.addEmployee(newEmployee);
+                organizationSubject.setState("Aggiunto dipendente: " + employeeName + " "+ lastName+ " con ruolo " + assignedRole.getName());
             }
         } else {
             JOptionPane.showMessageDialog(this, "Seleziona un'unità per aggiungere un dipendente.");
@@ -525,14 +538,14 @@ public class OrganizationChartGUI extends JFrame implements Observer {
             // Aggiungo i dipendenti al pannello employeesPanel
             for (Employee emp : selectedUnit.getEmployees()) {
                 JPanel employeePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-                JLabel employeeLabel = new JLabel(emp.getName() + " - Ruolo: " + emp.getRole(selectedUnit).getName());
+                JLabel employeeLabel = new JLabel(emp.getName() +" "+ emp.getLastName() + " - Ruolo: " + emp.getRole(selectedUnit).getName());
                 employeePanel.add(employeeLabel);
 
                 // Bottone per mostrare informazioni del dipendente
                 JButton modifyButton = new JButton("Mostra/Modifica info personali");
                 modifyButton.addActionListener(e -> {
                     modifyEmployee(emp);
-                    employeeLabel.setText(emp.getName() + " - Ruolo: " + emp.getRole(selectedUnit).getName());
+                    employeeLabel.setText(emp.getName() +" "+ emp.getLastName() + " - Ruolo: " + emp.getRole(selectedUnit).getName());
                 });
                 employeePanel.add(modifyButton);
 
@@ -540,7 +553,7 @@ public class OrganizationChartGUI extends JFrame implements Observer {
                 JButton modifyRoleButton = new JButton("Modifica Ruolo");
                 modifyRoleButton.addActionListener(e -> {
                     modifyRoleEmployee(emp);
-                    employeeLabel.setText(emp.getName() + " - Ruolo: " + emp.getRole(selectedUnit).getName());
+                    employeeLabel.setText(emp.getName() +" "+ emp.getLastName() + " - Ruolo: " + emp.getRole(selectedUnit).getName());
                 });
                 employeePanel.add(modifyRoleButton);
 
@@ -664,7 +677,7 @@ public class OrganizationChartGUI extends JFrame implements Observer {
         confirmButton.addActionListener(e -> {
             Role selectedRole = (Role) roleComboBox.getSelectedItem();
             if (selectedRole != null) {
-                emp.setRole(selectedUnit, selectedRole);
+                emp.addRole(selectedUnit, selectedRole);
                 roleDialog.dispose(); // Chiudi il dialogo
             }
         });
@@ -682,52 +695,82 @@ public class OrganizationChartGUI extends JFrame implements Observer {
 
 
     private void modifyEmployee(Employee emp) {
-        JTextField nameField = new JTextField(emp.getName());
-        JTextField lastNameField = new JTextField(emp.getLastName());
-        JTextField cityField = new JTextField(emp.getCity());
-        JTextField addressField = new JTextField(emp.getAddress());
-        JTextField ageField = new JTextField(String.valueOf(emp.getAge()));
+        boolean validInput = false;
+        while (!validInput) {
+            JTextField nameField = new JTextField(emp.getName());
+            JTextField lastNameField = new JTextField(emp.getLastName());
+            JTextField cityField = new JTextField(emp.getCity());
+            JTextField addressField = new JTextField(emp.getAddress());
+            JTextField ageField = new JTextField(String.valueOf(emp.getAge()));
 
-        JPanel panel = new JPanel(new GridLayout(5, 2, 10, 10));
-        panel.add(new JLabel("Nome:"));
-        panel.add(nameField);
-        panel.add(new JLabel("Cognome:"));
-        panel.add(lastNameField);
-        panel.add(new JLabel("Città:"));
-        panel.add(cityField);
-        panel.add(new JLabel("Indirizzo:"));
-        panel.add(addressField);
-        panel.add(new JLabel("Età:"));
-        panel.add(ageField);
+            while (!validInput) {
+                JPanel panel = new JPanel(new GridLayout(5, 2, 10, 10));
+                panel.add(new JLabel("Nome:"));
+                panel.add(nameField);
+                panel.add(new JLabel("Cognome:"));
+                panel.add(lastNameField);
+                panel.add(new JLabel("Città:"));
+                panel.add(cityField);
+                panel.add(new JLabel("Indirizzo:"));
+                panel.add(addressField);
+                panel.add(new JLabel("Età:"));
+                panel.add(ageField);
 
-        int result = JOptionPane.showConfirmDialog(this, panel, "Modifica Dipendente", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-        if (result == JOptionPane.OK_OPTION) {
-            try {
-                Employee oldEmployee = new Employee(emp.getName(),emp.getLastName(),emp.getCity(),emp.getAddress(),emp.getAge());
-                // Aggiorna in tutte le unità associate a questo dipendente
-                for (Unit unit : organizationSubject.getAllUnits()) {
-                    // Se l'unità contiene il dipendente, aggiorna i suoi dettagli
-                    if (unit.getEmployees().contains(emp)) {
-                        emp.setName(nameField.getText().trim());
-                        emp.setLastName(lastNameField.getText().trim());
-                        emp.setCity(cityField.getText().trim());
-                        emp.setAddress(addressField.getText().trim());
-                        emp.setAge(Integer.parseInt(ageField.getText().trim()));
-                        System.out.println(oldEmployee);
-                        System.out.println(emp);
-                        unit.updateEmployee(oldEmployee,emp); // Uso il metodo updateEmployee per aggiornare i dati
-                    }
+                int result = JOptionPane.showConfirmDialog(this, panel, "Modifica Dipendente", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+                if (result != JOptionPane.OK_OPTION) {
+                    return; // Esce se l'utente annulla
                 }
 
+                try {
+                    // Salva i nuovi valori
+                    String newName = nameField.getText().trim();
+                    String newLastName = lastNameField.getText().trim();
+                    String newCity = cityField.getText().trim();
+                    String newAddress = addressField.getText().trim();
+                    String ageText = ageField.getText().trim();
 
+                    // Controllo che nessun campo sia vuoto
+                    if (newName.isEmpty() || newLastName.isEmpty() || newCity.isEmpty() || newAddress.isEmpty() || ageText.isEmpty()) {
+                        JOptionPane.showMessageDialog(this, "Tutti i campi devono essere compilati.", "Errore", JOptionPane.ERROR_MESSAGE);
+                        continue; // Riapre il form di modifica con gli stessi valori
+                    }
 
-                organizationSubject.setState("Modificato dipendente: " + emp.getName());
-                chartPanel.repaint(); // Aggiorna la grafica
-            } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(this, "Errore: L'età deve essere un numero.", "Errore", JOptionPane.ERROR_MESSAGE);
+                    int newAge = Integer.parseInt(ageText);
+
+                    // Controllo validità dell'età
+                    if (newAge <= 0) {
+                        JOptionPane.showMessageDialog(this, "L'età deve essere un numero valido e maggiore di 0.", "Errore", JOptionPane.ERROR_MESSAGE);
+                        continue;
+                    }
+                    if (newAge < 18) {
+                        JOptionPane.showMessageDialog(this, "Il dipendente deve essere maggiorenne (almeno 18 anni).", "Errore", JOptionPane.ERROR_MESSAGE);
+                        continue;
+                    }
+
+                    // Aggiorna in tutte le unità associate a questo dipendente
+                    for (Unit unit : organizationSubject.getAllUnits()) {
+                        if (unit.getEmployees().contains(emp)) {
+                            unit.updateEmployee(emp, new Employee(newName, newLastName, newCity, newAddress, newAge));
+                        }
+                    }
+
+                    // Aggiorna direttamente l'oggetto emp per riflettere le modifiche globali
+                    emp.setName(newName);
+                    emp.setLastName(newLastName);
+                    emp.setCity(newCity);
+                    emp.setAddress(newAddress);
+                    emp.setAge(newAge);
+
+                    organizationSubject.setState("Modificato dipendente: " + emp.getName() + " " + emp.getLastName());
+                    chartPanel.repaint(); // Aggiorna la grafica
+                    validInput = true; // Esce dal loop solo dopo una modifica valida
+                } catch (NumberFormatException e) {
+                    JOptionPane.showMessageDialog(this, "Errore: L'età deve essere un numero valido.", "Errore", JOptionPane.ERROR_MESSAGE);
+                }
             }
         }
     }
+
 
     private void removeEmployee(Employee emp) {
         int confirmation = JOptionPane.showConfirmDialog(this, "Sei sicuro di voler eliminare il dipendente " + emp.getName() + "?", "Conferma Eliminazione", JOptionPane.YES_NO_OPTION);
@@ -812,9 +855,104 @@ private void showRoleDetails(Role role) {
             chartPanel.repaint();
         }
     }
+    private void showEmployeeManagement() {
+        JDialog employeeDialog = new JDialog(this, "Gestione Dipendenti", true);
+        employeeDialog.setLayout(new BorderLayout());
 
+        JPanel employeePanel = new JPanel();
+        employeePanel.setLayout(new BoxLayout(employeePanel, BoxLayout.Y_AXIS));
 
+        JPanel employeesSectionPanel = new JPanel(new BorderLayout());
+        employeesSectionPanel.add(new JLabel("Dipendenti presenti nell'organigramma:"), BorderLayout.NORTH);
 
+        JPanel employeesListPanel = new JPanel();
+        employeesListPanel.setLayout(new BoxLayout(employeesListPanel, BoxLayout.Y_AXIS));
+
+        // Mappa per memorizzare i dipendenti con le unità e i rispettivi ruoli
+        Map<Employee, Map<String, Role>> employeeRolesMap = new HashMap<>();
+
+        for (Unit unit : organizationSubject.getAllUnits()) {
+            for (Employee emp : unit.getEmployees()) {
+                // Se il dipendente non è ancora presente nella mappa, lo aggiungo con una nuova mappa interna
+                employeeRolesMap.putIfAbsent(emp, new HashMap<>());
+                // Aggiungo l'unità e il ruolo occupato dal dipendente
+                employeeRolesMap.get(emp).put(unit.getName(), emp.getRole(unit));
+            }
+        }
+
+        // Creiamo una lista degli impiegati e la ordiniamo alfabeticamente per nome e cognome
+        List<Employee> sortedEmployees = new ArrayList<>(employeeRolesMap.keySet());
+        sortedEmployees.sort(Comparator.comparing(Employee::getName).thenComparing(Employee::getLastName));
+
+        // Costruisco l'interfaccia utente basandomi sulla lista ordinata
+        for (Employee emp : sortedEmployees) {
+            Map<String, Role> unitRoles = employeeRolesMap.get(emp);
+
+            JPanel employeeInfoPanel = new JPanel();
+            employeeInfoPanel.setLayout(new BorderLayout());
+
+            // Intestazione con il nome del dipendente
+            JLabel employeeLabel = new JLabel(emp.getName() + " " + emp.getLastName());
+            employeeLabel.setFont(new Font("Arial", Font.BOLD, 14));
+            employeeInfoPanel.add(employeeLabel, BorderLayout.NORTH);
+
+            // Pannello per visualizzare le unità e i ruoli del dipendente
+            JPanel unitInfoPanel = new JPanel();
+            unitInfoPanel.setLayout(new BoxLayout(unitInfoPanel, BoxLayout.Y_AXIS));
+
+            for (Map.Entry<String, Role> unitEntry : unitRoles.entrySet()) {
+                String unitName = unitEntry.getKey();
+                Role role = unitEntry.getValue();
+
+                JLabel unitLabel = new JLabel("🔹 Unità: " + unitName + " - Ruolo: " + role.getName());
+                unitInfoPanel.add(unitLabel);
+            }
+
+            // Scroll panel per unità nel caso di molti elementi
+            JScrollPane unitScrollPane = new JScrollPane(unitInfoPanel);
+            unitScrollPane.setPreferredSize(new Dimension(400, 60));
+
+            employeeInfoPanel.add(unitScrollPane, BorderLayout.CENTER);
+
+            // Pannello per i bottoni di gestione
+            JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+
+            JButton modifyButton = createButton("Modifica Dati", e -> {
+                modifyEmployee(emp);
+                employeeLabel.setText(emp.getName() + " " + emp.getLastName());
+            });
+
+            JButton deleteButton = createButton("Licenzia", e -> {
+                int confirm = JOptionPane.showConfirmDialog(employeeDialog, "Sei sicuro di voler licenziare " + emp.getName() + " " + emp.getLastName() + "?", "Conferma licenziamento", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                if (confirm == JOptionPane.YES_OPTION) {
+                    // Rimuove il dipendente da tutte le unità
+                    for (Unit unit : organizationSubject.getAllUnits()) {
+                        unit.removeEmployee(emp);
+                    }
+                    employeesListPanel.remove(employeeInfoPanel);
+                    employeesListPanel.revalidate();
+                    employeesListPanel.repaint();
+                    organizationSubject.setState("Licenziato Dipendente: " + emp.getName()+ " " + emp.getLastName());
+                }
+            });
+
+            buttonPanel.add(modifyButton);
+            buttonPanel.add(deleteButton);
+            employeeInfoPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+            employeesListPanel.add(employeeInfoPanel);
+        }
+
+        JScrollPane employeesScrollPane = new JScrollPane(employeesListPanel);
+        employeesScrollPane.setPreferredSize(new Dimension(600, 400));
+        employeesSectionPanel.add(employeesScrollPane, BorderLayout.CENTER);
+
+        employeePanel.add(employeesSectionPanel);
+        employeeDialog.add(employeePanel, BorderLayout.CENTER);
+        employeeDialog.setSize(700, 500);
+        employeeDialog.setLocationRelativeTo(this);
+        employeeDialog.setVisible(true);
+    }
     private void saveOrganizationChart() {
         JFileChooser fileChooser = new JFileChooser();
         int option = fileChooser.showSaveDialog(this);

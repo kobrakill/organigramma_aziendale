@@ -51,14 +51,7 @@ public class Employee implements UnitComponent, Serializable {
         return rolebyUnits.get(name);
     }
 
-    public void setRole(Unit unit, Role role) {
-        if (unit.getAllowedRoles().contains(role)) {
-            rolebyUnits.put(unit.getName(), role);
-        } else {
-            throw new IllegalArgumentException("Role " + role.getName() + " for employee " + this.name +
-                    " of unit " + unit.getName() + " not allowed");
-        }
-    }
+
 
 
     public String getName() {
@@ -114,13 +107,6 @@ public class Employee implements UnitComponent, Serializable {
         return Objects.hash(name, lastName, city, address, age);
     }
 
-    public void update(Employee emp) {
-        this.name=emp.name;
-        this.lastName=emp.lastName;
-        this.city=emp.city;
-        this.address=emp.address;
-        this.age=emp.age;
-    }
 
     @Override
     public String toString() {

@@ -54,11 +54,9 @@ public class Unit implements UnitComponent, Serializable {
             Employee existingEmployee = employees.get(i);
             // Controllo se l'oggetto esistente è lo stesso del dipendente da aggiornare
             if (existingEmployee.equals(Oldemp)) {
-                System.out.println("cane");
                 // Aggiorno le informazioni del dipendente
-                emp.setRole(this,existingEmployee.getRole(this));
+                emp.addRole(this,existingEmployee.getRole(this));
                 employees.set(i, emp);
-                existingEmployee.update(emp);
                 break;
             }
         }
